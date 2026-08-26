@@ -138,6 +138,8 @@ h3{font-size:16.5px;font-weight:700;letter-spacing:-.024em;margin:0 0 6px}
 /* 대시보드 패널 */
 .panels{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .panel{background:linear-gradient(160deg,var(--s2),var(--s1));border:1px solid var(--line);border-radius:var(--r);padding:14px}
+a.panel{display:block;color:inherit;cursor:pointer;transition:border-color .2s}
+a.panel:hover{border-color:var(--pri-l)}
 [data-theme="light"] .panel{background:var(--s1)}
 .panel h4{margin:0 0 3px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--pri-l);text-transform:uppercase}
 .panel .cap{font-size:11px;color:var(--dim);margin:0 0 9px}
@@ -341,13 +343,13 @@ footer .logo img{height:30px;margin-bottom:14px}
     </div>
    </div>
    <div class="panels">
-    <div class="panel" style="grid-column:1/-1">
+    <a class="panel" href="http://safemap.deepaiearth.com" target="_blank" rel="noopener noreferrer" style="grid-column:1/-1" aria-label="Risk Detection 예시 화면 — 새 창에서 열기">
      <h4>Risk Detection <span class="tag ex" style="margin-left:6px">예시 화면</span></h4>
-     <p class="cap">위성 · 지형 · 강우 데이터 기반 위험도 분석</p>
+     <p class="cap">위성 · 지형 · 강우 데이터 기반 산사태 경로의 위험도 분석</p>
      <div class="map" style="min-height:190px"><div class="leg">
       <i style="background:#D94436"></i>매우 높음<br><i style="background:#FF9552"></i>높음<br>
       <i style="background:#F0B429"></i>보통<br><i style="background:#21D18A"></i>낮음</div></div>
-    </div>
+    </a>
     <div class="panel">
      <h4>Predictive Insight</h4><p class="cap">예측 추이 <span class="ph">(예시)</span></p>
      <svg viewBox="0 0 130 46" style="width:100%;height:52px">
