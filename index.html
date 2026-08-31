@@ -904,8 +904,8 @@ document.getElementById('phn').textContent=document.querySelectorAll('.ph').leng
 document.querySelectorAll('.ph').forEach(function(e){e.title='미확정 — 실제 값으로 교체하세요'});
 </script>
   
-<!-- 브이월드 지도 라이브러리 로드 (인증키/도메인은 실제 값으로 바꿔주세요) -->
-<script src="http://map.vworld.kr/js/apis.do?type=Base&apiKey=AB5AEC98-43F2-4E6C-9FDC-FA042E923D62&domain=www.deepaiearth.com"></script>
+<!-- http를 https로 변경 -->
+<script src="https://map.vworld.kr/js/apis.do?type=Base&apiKey=AB5AEC98-43F2-4E6C-9FDC-FA042E923D62&domain=www.deepaiearth.com"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -913,23 +913,29 @@ document.addEventListener('DOMContentLoaded', function () {
   var DOMAIN = 'www.deepaiearth.com';
   var ADDRESS = '서울특별시 성동구 왕십리로 130';
 
-  var geocodeUrl = 'https://api.vworld.kr/req/address?service=address'
+  // CORS 에러 회피를 위한 프록시 적용
+  var targetUrl = 'https://api.vworld.kr/req/address?service=address'
     + '&request=getcoord&version=2.0&crs=epsg:4326'
     + '&address=' + encodeURIComponent(ADDRESS)
     + '&refine=true&simple=false&format=json&type=road'
     + '&key=' + API_KEY + '&domain=' + DOMAIN;
 
+  var geocodeUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+
   fetch(geocodeUrl)
     .then(function (res) { return res.json(); })
     .then(function (data) {
-      var point = data.response.result.point;
-      var lon = parseFloat(point.x);
-      var lat = parseFloat(point.y);
-      initMap(lon, lat);
+      if (data.response && data.response.status === 'OK') {
+        var point = data.response.result.point;
+        initMap(parseFloat(point.x), parseFloat(point.y));
+      } else {
+        throw new Error('API 응답 에러');
+      }
     })
     .catch(function (err) {
       console.error('지오코딩 실패:', err);
-      initMap(37.325746, 127.024103); // 실패 시 성수동 대략 좌표로 대체
+      // 좌표 순서 수정 (경도: 127.04..., 위도: 37.54...)
+      initMap(127.0425, 37.5435); 
     });
 
   function initMap(lon, lat) {
