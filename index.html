@@ -903,43 +903,55 @@ function toggleTheme(){
 document.getElementById('phn').textContent=document.querySelectorAll('.ph').length;
 document.querySelectorAll('.ph').forEach(function(e){e.title='미확정 — 실제 값으로 교체하세요'});
 </script>
-  
-<!-- http를 https로 변경 -->
+
+<!-- VWorld 지도 API -->
 <script src="https://map.vworld.kr/js/apis.do?type=Base&apiKey=AB5AEC98-43F2-4E6C-9FDC-FA042E923D62&domain=www.deepaiearth.com"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  var API_KEY = 'AB5AEC98-43F2-4E6C-9FDC-FA042E923D62';
-  var DOMAIN = 'www.deepaiearth.com';
-  var ADDRESS = '서울특별시 성동구 왕십리로 130';
 
-  // CORS 에러 회피를 위한 프록시 적용
-  var targetUrl = 'https://api.vworld.kr/req/address?service=address'
-    + '&request=getcoord&version=2.0&crs=epsg:4326'
-    + '&address=' + encodeURIComponent(ADDRESS)
-    + '&refine=true&simple=false&format=json&type=road'
-    + '&key=' + API_KEY + '&domain=' + DOMAIN;
+  // 회사 위치
+  // 서울특별시 성동구 왕십리로 130
+  // 좌표 순서: 경도(lon), 위도(lat)
+  var lon = 127.0425;
+  var lat = 37.5435;
 
-  var geocodeUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+  var mapElement = document.getElementById('companyMap');
 
-  fetch(geocodeUrl)
-    .then(function (res) { return res.json(); })
-    .then(function (data) {
-      if (data.response && data.response.status === 'OK') {
-        var point = data.response.result.point;
-        initMap(parseFloat(point.x), parseFloat(point.y));
-      } else {
-        throw new Error('API 응답 에러');
-      }
-    })
-    .catch(function (err) {
-      console.error('지오코딩 실패:', err);
-      // 좌표 순서 수정 (경도: 127.04..., 위도: 37.54...)
-      initMap(127.0425, 37.5435); 
-    });
+  if (!mapElement) {
+    console.error('companyMap 요소를 찾을 수 없습니다.');
+    return;
+  }
+
+  // VWorld / OpenLayers API 로딩 여부 확인
+  if (typeof vw === 'undefined' || typeof ol === 'undefined') {
+    console.error('VWorld 지도 API 로딩 실패');
+
+    mapElement.innerHTML =
+      '<div style="' +
+      'height:100%;' +
+      'display:flex;' +
+      'align-items:center;' +
+      'justify-content:center;' +
+      'color:#64748b;' +
+      'font-size:14px;' +
+      '">' +
+      '지도를 불러오지 못했습니다.' +
+      '</div>';
+
+    return;
+  }
+
+  initMap(lon, lat);
 
   function initMap(lon, lat) {
-    var center3857 = ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857');
+
+    // WGS84 → Web Mercator
+    var center3857 = ol.proj.transform(
+      [lon, lat],
+      'EPSG:4326',
+      'EPSG:3857'
+    );
 
     var mapOptions = {
       basemapType: vw.ol3.BasemapType.GRAPHIC,
@@ -950,25 +962,53 @@ document.addEventListener('DOMContentLoaded', function () {
       initPosition: center3857
     };
 
-    var companyMap = new vw.ol3.Map('companyMap', mapOptions);
+    // 지도 생성
+    var companyMap = new vw.ol3.Map(
+      'companyMap',
+      mapOptions
+    );
+
     companyMap.getView().setCenter(center3857);
     companyMap.getView().setZoom(17);
 
-    var markerFeature = new ol.Feature({ geometry: new ol.geom.Point(center3857) });
-    markerFeature.setStyle(new ol.style.Style({
-      image: new ol.style.Circle({
-        radius: 7,
-        fill: new ol.style.Fill({ color: '#22D3EE' }),
-        stroke: new ol.style.Stroke({ color: '#0B1220', width: 2 })
-      })
-    }));
+    // 회사 위치 마커
+    var markerFeature = new ol.Feature({
+      geometry: new ol.geom.Point(center3857)
+    });
 
-    var vectorSource = new ol.source.Vector({ features: [markerFeature] });
-    var vectorLayer = new ol.layer.Vector({ source: vectorSource });
+    markerFeature.setStyle(
+      new ol.style.Style({
+        image: new ol.style.Circle({
+          radius: 7,
+          fill: new ol.style.Fill({
+            color: '#22D3EE'
+          }),
+          stroke: new ol.style.Stroke({
+            color: '#0B1220',
+            width: 2
+          })
+        })
+      })
+    );
+
+    var vectorSource = new ol.source.Vector({
+      features: [markerFeature]
+    });
+
+    var vectorLayer = new ol.layer.Vector({
+      source: vectorSource
+    });
+
     companyMap.addLayer(vectorLayer);
+
+    // 컨테이너 크기 인식 보정
+    setTimeout(function () {
+      companyMap.updateSize();
+      companyMap.getView().setCenter(center3857);
+    }, 300);
   }
 });
-</script>
+</script>  
   
 </body>
 </html>
