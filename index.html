@@ -831,7 +831,7 @@ footer .logo img{height:30px;margin-bottom:14px}
   </div>
  </section>
 
- <section style="padding-top:0">
+<section style="padding-top:0">
   <div class="wrap">
    <div class="grid g2">
      <div class="card">
@@ -839,28 +839,21 @@ footer .logo img{height:30px;margin-bottom:14px}
       <div style="display:flex;gap:12px;padding:7px 0;align-items:center"><svg class="ic sm"><use href="#i-phone"/></svg><span>02-738-3486</span></div>
       <div style="display:flex;gap:12px;padding:7px 0;align-items:center"><svg class="ic sm"><use href="#i-mail"/></svg><span class="ph">contact@deepaiearth.com</span></div>
       <div style="display:flex;gap:12px;padding:7px 0;align-items:center"><svg class="ic sm"><use href="#i-globe"/></svg><span>www.deepaiearth.com</span></div>
-      <p class="note" style="margin-top:10px">※ 기획보드에는 hello@, 홈페이지 시안에는 contact@ 로 표기되어 있습니다. 하나로 확정해 주세요.</p>
      </div>
      <div class="card">
       <h4 style="font-family:var(--mono);font-size:11px;letter-spacing:.13em;color:var(--pri-l);margin:0 0 14px">오시는 길</h4>
       <div style="display:flex;gap:12px;align-items:flex-start"><svg class="ic sm" style="flex:none"><use href="#i-pin"/></svg>
        <span>서울특별시 성동구 왕십리로 130, 10층 딥아이어스<br><span style="color:var(--dim)">(성수동 1가, KCC프리미어타워)</span></span></div>
-      <div style="margin-top:14px;height:150px;border-radius:9px;border:1px solid var(--line);background:
-        linear-gradient(120deg,var(--s2),var(--bg));display:grid;place-items:center;position:relative;overflow:hidden">
-       <svg viewBox="0 0 300 150" style="position:absolute;inset:0;width:100%;height:100%;opacity:.5">
-        <g stroke="#2A3550" stroke-width="1.5" fill="none">
-         <path d="M0 46h300M0 104h300M74 0v150M186 0v150"/></g>
-        <g stroke="#3A4870" stroke-width="4" fill="none"><path d="M0 75h300"/></g></svg>
-       <div style="position:relative;z-index:1;text-align:center">
-        <svg class="ic" style="stroke:var(--cyan)"><use href="#i-pin"/></svg>
-        <p style="margin:4px 0 0;font-size:12px;color:var(--mut)">KCC프리미어타워</p></div>
-      </div>
-      <p class="note">※ 실제 지도는 카카오/네이버 지도 API 키 발급 후 임베드합니다.</p>
+      <!-- 여기부터 실제 지도로 교체 -->
+      <div id="companyMap" style="margin-top:14px;height:150px;border-radius:9px;border:1px solid var(--line);overflow:hidden;position:relative;background:var(--bg);"></div>
+      <p class="note">지도 데이터 © 국토교통부 브이월드</p>
+      <!-- 여기까지 -->
      </div>
    </div>
   </div>
  </section>
 </main>
+
 
 <footer>
  <div class="wrap">
@@ -910,5 +903,66 @@ function toggleTheme(){
 document.getElementById('phn').textContent=document.querySelectorAll('.ph').length;
 document.querySelectorAll('.ph').forEach(function(e){e.title='미확정 — 실제 값으로 교체하세요'});
 </script>
+  
+<!-- 브이월드 지도 라이브러리 로드 (인증키/도메인은 실제 값으로 바꿔주세요) -->
+<script src="http://map.vworld.kr/js/apis.do?type=Base&apiKey=AB5AEC98-43F2-4E6C-9FDC-FA042E923D62&domain=www.deepaiearth.com"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var API_KEY = '여기에_발급받은_인증키';
+  var DOMAIN = 'www.deepaiearth.com';
+  var ADDRESS = '서울특별시 성동구 왕십리로 130';
+
+  var geocodeUrl = 'https://api.vworld.kr/req/address?service=address'
+    + '&request=getcoord&version=2.0&crs=epsg:4326'
+    + '&address=' + encodeURIComponent(ADDRESS)
+    + '&refine=true&simple=false&format=json&type=road'
+    + '&key=' + API_KEY + '&domain=' + DOMAIN;
+
+  fetch(geocodeUrl)
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      var point = data.response.result.point;
+      var lon = parseFloat(point.x);
+      var lat = parseFloat(point.y);
+      initMap(lon, lat);
+    })
+    .catch(function (err) {
+      console.error('지오코딩 실패:', err);
+      initMap(127.0557, 37.5445); // 실패 시 성수동 대략 좌표로 대체
+    });
+
+  function initMap(lon, lat) {
+    var center3857 = ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857');
+
+    var mapOptions = {
+      basemapType: vw.ol3.BasemapType.GRAPHIC,
+      controlDensity: vw.ol3.DensityType.EMPTY,
+      interactionDensity: vw.ol3.DensityType.BASIC,
+      controlsAutoArrange: true,
+      homePosition: center3857,
+      initPosition: center3857
+    };
+
+    var companyMap = new vw.ol3.Map('companyMap', mapOptions);
+    companyMap.getView().setCenter(center3857);
+    companyMap.getView().setZoom(17);
+
+    var markerFeature = new ol.Feature({ geometry: new ol.geom.Point(center3857) });
+    markerFeature.setStyle(new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 7,
+        fill: new ol.style.Fill({ color: '#22D3EE' }),
+        stroke: new ol.style.Stroke({ color: '#0B1220', width: 2 })
+      })
+    }));
+
+    var vectorSource = new ol.source.Vector({ features: [markerFeature] });
+    var vectorLayer = new ol.layer.Vector({ source: vectorSource });
+    companyMap.addLayer(vectorLayer);
+  }
+});
+</script>
+<!-- 브이월드 지도 라이브러리 로드 (인증키/도메인은 실제 값으로 바꿔주세요) -->  
 </body>
 </html>
